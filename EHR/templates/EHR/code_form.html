@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+      <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="/resources/demos/style.css">
+  <style>
+  .ui-autocomplete-loading {
+    background: white url("images/ui-anim_basic_16x16.gif") right center no-repeat;
+  }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+  <script>
+      var snomed_data = null;
+  $( function() {
+    $("button.del").on("click", function(){
+         alert($(this).attr("href"));
+    });
+
+
+    $( ".date_entry" ).datepicker({
+      changeMonth: true,
+      changeYear: true,
+      dateFormat: "yy-mm-dd",
+      showButtonPanel: true,
+    });
+
+    $( ".term" ).autocomplete({
+      source: function( request, response ) {
+        $.ajax( {
+          url: "http://127.0.0.1:8080/v1/snomed/search",
+          data: {
+            s: request.term
+          },
+          dataType: "json",
+          success: function( data ) {
+            snomed_data = data;
+            d2 = data.map(d => d.term);
+            response( d2 );
+          }
+        } );
+      },
+      minLength: 2,
+      select: function( event, ui ) {
+        for (i=0; i<snomed_data.length;i++)
+        {
+            obj = snomed_data[i];
+            if (obj.term == ui.item.value) {
+                $(this).closest('td').siblings().find('.concept_code').val(obj.conceptId);
+                $(this).closest('td').siblings().find('.term_code').val(obj.id);
+            }
+        }
+      }
+    } );
+  } );
+  </script>
+</head>
+<body>
+
+{% block content %}
+    <h2>{{person}}</h2>
+    <form method="POST">
+        <table>
+            {{ formset.management_form }}
+            {% for form in formset %}
+            {% if forloop.first %}
+            <tr>
+                {% for field in form.visible_fields %}
+                <th>{{field.label}}</th>
+                {% endfor %}
+            </tr>
+            {% endif %}
+            {% endfor %}
+            {% for form in formset %}
+            <tr>
+                {% for field in form.visible_fields %}
+                <td>{{field}}</td>
+                {% endfor %}
+                {% for field in form.hidden_fields %}
+                {{field}}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    {% csrf_token %}
+    <input type="submit" value="Update" id="submit_form"/>
+    </form>
+{% endblock %}
+</html>
